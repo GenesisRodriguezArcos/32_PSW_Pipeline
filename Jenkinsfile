@@ -1,6 +1,10 @@
 pipeline {
     agent any
     
+    tools {
+        maven 'Maven'
+    }
+    
     environment {
         // Variables de entorno
         SONAR_HOST_URL = 'http://localhost:9000'
