@@ -88,10 +88,8 @@ pipeline {
                             sleep 15
                         '''
                     } else {
-                        bat '''
-                            start /B java -jar target\\psw-pipeline-base-0.0.1-SNAPSHOT.jar
-                            timeout /t 15
-                        '''
+                        bat 'start /B java -jar target\\psw-pipeline-base-0.0.1-SNAPSHOT.jar'
+                        sleep 20
                     }
                 }
                 echo 'Aplicación iniciada en puerto ' + env.APP_PORT
@@ -127,20 +125,24 @@ pipeline {
             steps {
                 echo '=== Deteniendo aplicación ==='
                 script {
-                    if (isUnix()) {
-                        sh '''
-                            if [ -f app.pid ]; then
-                                kill $(cat app.pid) || true
-                                rm app.pid
-                            fi
-                        '''
-                    } else {
-                        bat '''
-                            for /f "tokens=5" %%a in ('netstat -aon ^| find ":%APP_PORT%" ^| find "LISTENING"') do taskkill /F /PID %%a
-                        '''
+                    try {
+                        if (isUnix()) {
+                            sh '''
+                                if [ -f app.pid ]; then
+                                    kill $(cat app.pid) || true
+                                    rm app.pid
+                                fi
+                            '''
+                        } else {
+                            bat '''
+                                for /f "tokens=5" %%a in ('netstat -aon ^| find ":8085" ^| find "LISTENING"') do taskkill /F /PID %%a || exit 0
+                            '''
+                        }
+                        echo 'Aplicación detenida correctamente'
+                    } catch (Exception e) {
+                        echo 'No había aplicación corriendo o ya fue detenida'
                     }
                 }
-                echo 'Aplicación detenida'
             }
         }
     }
@@ -167,22 +169,9 @@ pipeline {
         failure {
             echo '=== Pipeline falló ==='
             echo '❌ Revisa los logs para más detalles'
-            // TODO: Descomentar después de configurar Slack
-            // script {
-            //     slackSend(
-            //         channel: env.SLACK_CHANNEL,
-            //         color: 'danger',
-            //         message: """
-            //             ❌ *Pipeline falló*
-            //             Proyecto: ${env.JOB_NAME}
-            //             Build: ${env.BUILD_NUMBER}
-            //         """
-            //     )
-            // }
-        
+        }
         always {
-            echo '=== Limpiando workspace ==='
-            cleanWs()
+            echo '=== Finalizando pipeline ==='
         }
     }
 }
