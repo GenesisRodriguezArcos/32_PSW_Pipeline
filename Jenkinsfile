@@ -58,7 +58,8 @@ pipeline {
                 script {
                     try {
                         bat 'start /B java -jar target\\psw-pipeline-base-0.0.1-SNAPSHOT.jar'
-                        sleep 20
+                        echo 'Esperando 20 segundos para que la aplicación inicie...'
+                        sleep(time: 20, unit: 'SECONDS')
                         echo 'Aplicación iniciada'
                         bat 'curl http://localhost:8085/actuator/health'
                         echo 'Health check: OK'
